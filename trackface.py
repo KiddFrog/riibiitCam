@@ -1,14 +1,18 @@
 import cv2
+import libcamera
+
+# Initialize libcamera
+libcamera.start()
+
+# Open the first camera (you might need to adjust the camera index)
+camera = libcamera.Camera(0)
 
 # Load the pre-trained face detector
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-# Open a connection to the camera (0 is usually the default camera)
-cap = cv2.VideoCapture(0)
-
 while True:
-    # Read a frame from the camera
-    ret, frame = cap.read()
+    # Capture a frame from the camera
+    frame = camera.capture()
 
     # Convert the frame to grayscale for face detection
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -27,6 +31,6 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the camera and close the window
-cap.release()
+# Release libcamera resources
+libcamera.stop()
 cv2.destroyAllWindows()
