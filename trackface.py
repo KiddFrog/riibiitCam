@@ -8,8 +8,8 @@ cmd = ["libcamera-hello", "-t", "5000", "-s", "1280x720", "-f", "NV12"]
 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 # Load the pre-trained face detector
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
+haarcascade_path = "/home/froggo/haarcascade_frontalface_default.xml"
+face_cascade = cv2.CascadeClassifier(haarcascade_path)
 while True:
     # Read a frame from libcamera-hello stdout
     raw_frame = process.stdout.read(1280 * 720 * 1.5)  # Assuming resolution is 1280x720 and format is NV12
@@ -36,3 +36,18 @@ while True:
 # Release libcamera-hello subprocess
 process.terminate()
 cv2.destroyAllWindows()
+
+
+
+Traceback (most recent call last):
+  File "/home/froggo/Desktop/riibiit/trackface.py", line 15, in <module>
+    raw_frame = process.stdout.read(1280 * 720 * 1.5)  # Assuming resolution is 1280x720 and format is NV12
+TypeError: argument should be integer or None, not 'float'
+
+
+------------------
+(program exited with code: 1)
+Press return to continue
+
+
+
