@@ -31,9 +31,8 @@ def crop_and_track(filename):
     # Initialize a list to store tracked images
     tracked_images = []
 
-    # Variables to store the offset of the first detected face in the second image
-    offset_x = None
-    offset_y = None
+    # Initialize a dictionary to store bounding box positions
+    bounding_box_positions = {}
 
     for i in range(4):
         # Crop the image based on the camera's position
@@ -47,26 +46,29 @@ def crop_and_track(filename):
         # Detect faces in the cropped image
         faces = face_cascade.detectMultiScale(cv_image, 1.1, 4)
 
-        # Store the offset of the first detected face in the second image
-        if i == 1 and len(faces) > 0:
-            offset_x, offset_y, _, _ = faces[0]
+        # Save bounding box positions to dictionary
+        for idx, (x, y, w, h) in enumerate(faces):
+            bounding_box_positions[f"image_{i} x_{idx}"] = x
+            bounding_box_positions[f"image_{i} y_{idx}"] = y
 
-        # Adjust the positions of bounding boxes based on the offset
+        # Draw rectangles around the detected faces
         for (x, y, w, h) in faces:
-            x -= offset_x if offset_x is not None else 0
-            y -= offset_y if offset_y is not None else 0
-
             cv2.rectangle(cv_image, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
         # Convert back to PIL format
         tracked_image = Image.fromarray(cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB))
-
+        
         # Save the tracked image with a new filename
         tracked_filename = f"Tracked_{filename}_{i}.jpg"
         tracked_image_path = os.path.join(OUTPUT_DIR, tracked_filename)
         tracked_image.save(tracked_image_path)
-
+        
         tracked_images.append(tracked_image_path)
+
+    # Save bounding box positions to a text file
+    with open(os.path.join(OUTPUT_DIR, "bounding_box_positions.txt"), "w") as file:
+        for key, value in bounding_box_positions.items():
+            file.write(f"{key} = {value}\n")
 
     return tracked_images
 
