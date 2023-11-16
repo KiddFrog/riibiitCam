@@ -42,11 +42,14 @@ def crop_images(filename):
     return cropped_images
 
 def create_gif(images, gif_path):
-    # Reverse the order of images
-    reversed_images = list(reversed(images))
+    # Reverse the order of images (excluding the last one to prevent duplicate)
+    reversed_images = list(reversed(images[:-1]))
+
+    # Concatenate the list with its reverse
+    forward_backward_images = images + reversed_images
 
     # Create animated GIF using convert
-    os.system(f"convert -format jpg -rotate '-90' -resize 600 +repage -delay 20 -loop 0 -colors 100 {' '.join(reversed_images)} {gif_path}")
+    os.system(f"convert -format jpg -rotate '-90' -resize 600 +repage -delay 20 -loop 0 -colors 100 {' '.join(forward_backward_images)} {gif_path}")
 
 # Step 1: Capture Photo
 filename = capture_photo()
@@ -54,6 +57,6 @@ filename = capture_photo()
 # Step 2: Crop Images
 cropped_images = crop_images(filename)
 
-# Step 3: Create GIF with Backward Looping
+# Step 3: Create GIF with Forward and Backward Looping
 gif_path = os.path.join(OUTPUT_DIR, f"animated_gif_{filename}.gif")
 create_gif(cropped_images, gif_path)
