@@ -47,10 +47,11 @@ def crop_and_track(filename):
         # Detect faces in the cropped image
         faces = face_cascade.detectMultiScale(cv_image, 1.1, 4)
 
-        # Adjust the positions of bounding boxes based on the offset
+        # Store the offset of the first detected face in the second image
         if i == 1 and len(faces) > 0:
             offset_x, offset_y, _, _ = faces[0]
 
+        # Adjust the positions of bounding boxes based on the offset
         for (x, y, w, h) in faces:
             x -= offset_x if offset_x is not None else 0
             y -= offset_y if offset_y is not None else 0
