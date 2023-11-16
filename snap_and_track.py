@@ -1,7 +1,6 @@
 import os
 import time
 from PIL import Image
-import numpy as np
 
 # Set the output directory for the photos
 OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiit/PICTURES")
@@ -19,14 +18,13 @@ def capture_photo():
 
     return filename
 
-def crop_and_track(filename):
+def crop_images(filename):
     # Load the captured photo
     image_path = os.path.join(OUTPUT_DIR, filename + ".jpg")
     image = Image.open(image_path)
 
-    # Initialize a list to store tracked images and face positions
-    tracked_images = []
-    face_positions = []
+    # Initialize a list to store cropped images
+    cropped_images = []
 
     for i in range(4):
         # Crop the image based on the camera's position
@@ -39,40 +37,28 @@ def crop_and_track(filename):
         cropped_image_path = os.path.join(OUTPUT_DIR, cropped_filename)
         cropped_image.save(cropped_image_path)
 
-        tracked_images.append(cropped_image_path)
+        cropped_images.append(cropped_image_path)
 
-        # Save face positions
-        face_positions.append((x, y))
+    return cropped_images
 
-    # Save face positions to a text file
-    with open(os.path.join(OUTPUT_DIR, f"{filename}_face_positions.txt"), 'w') as f:
-        for i, (x, y) in enumerate(face_positions):
-            f.write(f"image_{i} x = {x}\nimage_{i} y = {y}\n")
-
-    return tracked_images
-
-def align_images_and_create_gif(filename, tracked_images):
-    # Resize and copy images
-    os.system(f"convert {tracked_images[0]} -resize 1000 +repage {os.path.join(OUTPUT_DIR, 'aligned_00.jpg')}")
-
-    # Align images using align_image_stack
-    os.system(f"align_image_stack -i -m -s 1 -C -a {os.path.join(OUTPUT_DIR, 'aligned_')} -C {os.path.join(OUTPUT_DIR, 'aligned_00.jpg')}")
-
-    # Equalize color and brightness using PTblender
-    os.system(f"PTblender -k 0 -t 0 -p {os.path.join(OUTPUT_DIR, 'aligned_')} {tracked_images[0]}")
+def create_gif(images, gif_path):
+    # Resize images
+    resized_images = [f"{os.path.splitext(image)[0]}_resized.jpg" for image in images]
+    for image, resized_image in zip(images, resized_images):
+        os.system(f"convert {image} -resize 1000 +repage {resized_image}")
 
     # Create animated GIF using convert
-    gif_path = os.path.join(OUTPUT_DIR, f"aligned_gif_{filename}.gif")
-    os.system(f"convert -format jpg -rotate '-90' -resize 600 +repage -delay 20 -loop 0 -colors 100 {os.path.join(OUTPUT_DIR, 'aligned_')}* {gif_path}")
+    os.system(f"convert -format jpg -rotate '-90' -resize 600 +repage -delay 20 -loop 0 -colors 100 {' '.join(resized_images)} {gif_path}")
 
     # Cleanup
-    os.system(f"rm {os.path.join(OUTPUT_DIR, 'aligned_')}*")
+    os.system(f"rm {' '.join(resized_images)}")
 
 # Step 1: Capture Photo
 filename = capture_photo()
 
-# Step 2: Crop and Track Faces
-tracked_images = crop_and_track(filename)
+# Step 2: Crop Images
+cropped_images = crop_images(filename)
 
-# Step 3: Align Images and Create GIF
-align_images_and_create_gif(filename, tracked_images)
+# Step 3: Create GIF
+gif_path = os.path.join(OUTPUT_DIR, f"animated_gif_{filename}.gif")
+create_gif(cropped_images, gif_path)
