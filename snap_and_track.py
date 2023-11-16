@@ -1,6 +1,5 @@
 import os
 import time
-import numpy as np
 from PIL import Image
 import cv2
 
@@ -31,9 +30,6 @@ def crop_and_track(filename):
     # Initialize a list to store tracked images
     tracked_images = []
 
-    # Initialize a dictionary to store bounding box positions
-    bounding_box_positions = {}
-
     for i in range(4):
         # Crop the image based on the camera's position
         x = WIDTH * (i % 2)
@@ -45,11 +41,6 @@ def crop_and_track(filename):
 
         # Detect faces in the cropped image
         faces = face_cascade.detectMultiScale(cv_image, 1.1, 4)
-
-        # Save bounding box positions to dictionary
-        for idx, (x, y, w, h) in enumerate(faces):
-            bounding_box_positions[f"image_{i} x_{idx}"] = x
-            bounding_box_positions[f"image_{i} y_{idx}"] = y
 
         # Draw rectangles around the detected faces
         for (x, y, w, h) in faces:
@@ -65,14 +56,16 @@ def crop_and_track(filename):
         
         tracked_images.append(tracked_image_path)
 
+    return tracked_images
+
+def save_bounding_box_positions(filename, bounding_box_positions):
     # Save bounding box positions to a text file
-    with open(os.path.join(OUTPUT_DIR, "bounding_box_positions.txt"), "w") as file:
+    positions_file_path = os.path.join(OUTPUT_DIR, f"{filename}_bounding_box_positions.txt")
+    with open(positions_file_path, 'w') as positions_file:
         for key, value in bounding_box_positions.items():
-            file.write(f"{key} = {value}\n")
+            positions_file.write(f"{key} = {value}\n")
 
-    return tracked_images, bounding_box_positions
-
-def place_images(tracked_images, bounding_box_positions):
+def place_images(filename, tracked_images, bounding_box_positions):
     # Load the position of the bounding box in image_1
     x_1 = bounding_box_positions.get("image_1 x_0", 0)
     y_1 = bounding_box_positions.get("image_1 y_0", 0)
@@ -89,8 +82,8 @@ def place_images(tracked_images, bounding_box_positions):
         tracked_image = Image.open(tracked_image_path)
 
         # Calculate the adjustment for x, y positions
-        x_adjustment = x_1 - bounding_box_positions.get(f"image_{i} x_0", 0)
-        y_adjustment = y_1 - bounding_box_positions.get(f"image_{i} y_0", 0)
+        x_adjustment = x_1 - bounding_box_positions.get(f"image_1 x_0", 0)
+        y_adjustment = y_1 - bounding_box_positions.get(f"image_1 y_0", 0)
 
         # Adjust the position of the bounding box in the image
         adjusted_image = tracked_image.crop((x_adjustment, y_adjustment, x_adjustment + WIDTH, y_adjustment + HEIGHT))
@@ -104,21 +97,37 @@ def place_images(tracked_images, bounding_box_positions):
 
     return placed_images
 
-def create_gif(images, gif_name, loop=True):
+def create_gif(image_paths, gif_path):
     # Create a GIF from the images
-    gif_path = os.path.join(OUTPUT_DIR, f"{gif_name}.gif")
-
-    with Image.open(images[0]) as gif_image:
-        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in images[1:]], loop=int(loop), duration=100)
+    with Image.open(image_paths[0]) as gif_image:
+        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in image_paths[1:]], loop=0, duration=100)
 
 # Step 1: Capture Photo
 filename = capture_photo()
 
 # Step 2: Crop and Track Faces
-tracked_images, bounding_box_positions = crop_and_track(filename)
+tracked_images = crop_and_track(filename)
 
-# Step 3: Place Images Based on Tracked Data
-placed_images = place_images(tracked_images, bounding_box_positions)
+# Step 3: Save Bounding Box Positions
+bounding_box_positions = {
+    "image_0 x_0": 0,
+    "image_0 y_0": 0,
+    "image_1 x_0": 0,  # Adjust as needed
+    "image_1 y_0": 0,  # Adjust as needed
+    "image_2 x_0": 0,
+    "image_2 y_0": 0,
+    "image_3 x_0": 0,
+    "image_3 y_0": 0,
+}
+save_bounding_box_positions(filename, bounding_box_positions)
 
-# Step 4: Create GIF from Placed Images
-create_gif(placed_images, "placed_faces", loop=True)
+# Step 4: Create GIF from Tracked Images
+tracked_gif_path = os.path.join(OUTPUT_DIR, f"tracked_faces_{filename}.gif")
+create_gif(tracked_images, tracked_gif_path)
+
+# Step 5: Place Images
+placed_images = place_images(filename, tracked_images, bounding_box_positions)
+
+# Step 6: Create GIF from Placed Images
+placed_gif_path = os.path.join(OUTPUT_DIR, f"placed_faces_{filename}.gif")
+create_gif(placed_images, placed_gif_path)
