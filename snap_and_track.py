@@ -70,20 +70,55 @@ def crop_and_track(filename):
         for key, value in bounding_box_positions.items():
             file.write(f"{key} = {value}\n")
 
-    return tracked_images
+    return tracked_images, bounding_box_positions
 
-def create_gif(tracked_images):
-    # Create a GIF from the tracked images
-    gif_path = os.path.join(OUTPUT_DIR, "tracked_faces.gif")
+def place_images(tracked_images, bounding_box_positions):
+    # Load the position of the bounding box in image_1
+    x_1 = bounding_box_positions.get("image_1 x_0", 0)
+    y_1 = bounding_box_positions.get("image_1 y_0", 0)
 
-    with Image.open(tracked_images[0]) as gif_image:
-        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in tracked_images[1:]], loop=0, duration=100)
+    # Create a directory for the placed images
+    placed_images_dir = os.path.join(OUTPUT_DIR, "PLACED_IMAGES")
+    os.makedirs(placed_images_dir, exist_ok=True)
+
+    # Initialize a list to store placed images
+    placed_images = []
+
+    for i, tracked_image_path in enumerate(tracked_images):
+        # Load the tracked image
+        tracked_image = Image.open(tracked_image_path)
+
+        # Calculate the adjustment for x, y positions
+        x_adjustment = x_1 - bounding_box_positions.get(f"image_{i} x_0", 0)
+        y_adjustment = y_1 - bounding_box_positions.get(f"image_{i} y_0", 0)
+
+        # Adjust the position of the bounding box in the image
+        adjusted_image = tracked_image.crop((x_adjustment, y_adjustment, x_adjustment + WIDTH, y_adjustment + HEIGHT))
+
+        # Save the adjusted image with a new filename
+        placed_filename = f"PLACED_{filename}_{i}.jpg"
+        placed_image_path = os.path.join(placed_images_dir, placed_filename)
+        adjusted_image.save(placed_image_path)
+
+        placed_images.append(placed_image_path)
+
+    return placed_images
+
+def create_gif(images, gif_name, loop=True):
+    # Create a GIF from the images
+    gif_path = os.path.join(OUTPUT_DIR, f"{gif_name}.gif")
+
+    with Image.open(images[0]) as gif_image:
+        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in images[1:]], loop=int(loop), duration=100)
 
 # Step 1: Capture Photo
 filename = capture_photo()
 
 # Step 2: Crop and Track Faces
-tracked_images = crop_and_track(filename)
+tracked_images, bounding_box_positions = crop_and_track(filename)
 
-# Step 3: Create GIF from Tracked Images
-create_gif(tracked_images)
+# Step 3: Place Images Based on Tracked Data
+placed_images = place_images(tracked_images, bounding_box_positions)
+
+# Step 4: Create GIF from Placed Images
+create_gif(placed_images, "placed_faces", loop=True)
