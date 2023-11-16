@@ -47,8 +47,11 @@ def create_gif(images, gif_path):
     for image, resized_image in zip(images, resized_images):
         os.system(f"convert {image} -resize 1000 +repage {resized_image}")
 
+    # Reverse the order of resized images
+    reversed_images = list(reversed(resized_images))
+
     # Create animated GIF using convert
-    os.system(f"convert -format jpg -rotate '-90' -resize 600 +repage -delay 20 -loop 0 -colors 100 {' '.join(resized_images)} {gif_path}")
+    os.system(f"convert -format jpg -rotate '-90' -resize 600 +repage -delay 20 -loop 0 -colors 100 {' '.join(reversed_images)} {gif_path}")
 
     # Cleanup
     os.system(f"rm {' '.join(resized_images)}")
@@ -59,6 +62,6 @@ filename = capture_photo()
 # Step 2: Crop Images
 cropped_images = crop_images(filename)
 
-# Step 3: Create GIF
+# Step 3: Create GIF with Backward Looping
 gif_path = os.path.join(OUTPUT_DIR, f"animated_gif_{filename}.gif")
 create_gif(cropped_images, gif_path)
