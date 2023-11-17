@@ -5,6 +5,11 @@ from matplotlib.animation import FuncAnimation
 
 # Function to align an image to a reference image
 def align_to_reference(reference_img, img_to_align):
+    # Check if the images are empty
+    if reference_img is None or img_to_align is None:
+        print("Error: One or both images are empty.")
+        return None
+
     # Convert images to grayscale
     gray_reference = cv2.cvtColor(reference_img, cv2.COLOR_BGR2GRAY)
     gray_to_align = cv2.cvtColor(img_to_align, cv2.COLOR_BGR2GRAY)
@@ -37,15 +42,14 @@ def align_to_reference(reference_img, img_to_align):
 
     return aligned_img
 
-# Load your images
-image1 = cv2.imread("~/Desktop/riibiit/PICTURES/image1.jpg")
+# Load your images with full paths
 image2 = cv2.imread("~/Desktop/riibiit/PICTURES/image2.jpg")
+image1 = cv2.imread("~/Desktop/riibiit/PICTURES/image1.jpg")
 image3 = cv2.imread("~/Desktop/riibiit/PICTURES/image3.jpg")
 image4 = cv2.imread("~/Desktop/riibiit/PICTURES/image4.jpg")
 
 # Align images to image2
 aligned_image1 = align_to_reference(image2, image1)
-aligned_image2 = align_to_reference(image2, image2)
 aligned_image3 = align_to_reference(image2, image3)
 aligned_image4 = align_to_reference(image2, image4)
 
@@ -53,7 +57,7 @@ aligned_image4 = align_to_reference(image2, image4)
 fig, ax = plt.subplots()
 
 # Display the aligned images
-img_display = ax.imshow(aligned_image1)
+img_display = ax.imshow(aligned_image2)
 
 # Function to update the displayed image in the animation
 def update(frame):
