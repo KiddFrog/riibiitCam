@@ -50,26 +50,37 @@ image4 = cv2.imread("~/Desktop/riibiit/PICTURES/image4.jpg")
 
 # Align images to image2
 aligned_image1 = align_to_reference(image2, image1)
-aligned_image2 = align_to_reference(image2, image2)  # Corrected variable name
+aligned_image2 = align_to_reference(image2, image2)
 aligned_image3 = align_to_reference(image2, image3)
 aligned_image4 = align_to_reference(image2, image4)
+
+# Check if any of the aligned images is None
+if any(img is None for img in [aligned_image1, aligned_image2, aligned_image3, aligned_image4]):
+    print("Error: One or more aligned images are empty.")
+    exit(1)
+
+# Convert images to the correct data type for display
+aligned_image1_display = cv2.cvtColor(aligned_image1, cv2.COLOR_BGR2RGB)
+aligned_image2_display = cv2.cvtColor(aligned_image2, cv2.COLOR_BGR2RGB)
+aligned_image3_display = cv2.cvtColor(aligned_image3, cv2.COLOR_BGR2RGB)
+aligned_image4_display = cv2.cvtColor(aligned_image4, cv2.COLOR_BGR2RGB)
 
 # Create a figure and axis
 fig, ax = plt.subplots()
 
 # Display the aligned images
-img_display = ax.imshow(aligned_image2)
+img_display = ax.imshow(aligned_image2_display)
 
 # Function to update the displayed image in the animation
 def update(frame):
     if frame == 0:
-        img_display.set_array(aligned_image1)
+        img_display.set_array(aligned_image1_display)
     elif frame == 1:
-        img_display.set_array(aligned_image2)
+        img_display.set_array(aligned_image2_display)
     elif frame == 2:
-        img_display.set_array(aligned_image3)
+        img_display.set_array(aligned_image3_display)
     elif frame == 3:
-        img_display.set_array(aligned_image4)
+        img_display.set_array(aligned_image4_display)
 
 # Create the animation
 animation = FuncAnimation(fig, update, frames=np.arange(0, 4), interval=1000)
