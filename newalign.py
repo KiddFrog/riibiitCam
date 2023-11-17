@@ -50,6 +50,7 @@ image4 = cv2.imread("~/Desktop/riibiit/PICTURES/image4.jpg")
 
 # Align images to image2
 aligned_image1 = align_to_reference(image2, image1)
+aligned_image2 = align_to_reference(image2, image2)  # Corrected variable name
 aligned_image3 = align_to_reference(image2, image3)
 aligned_image4 = align_to_reference(image2, image4)
 
