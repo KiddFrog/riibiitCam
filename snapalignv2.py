@@ -1,5 +1,6 @@
 import os
 import cv2
+import numpy as np
 from shutil import copyfile
 
 MAX_MATCHES = 1000
@@ -36,7 +37,7 @@ def align_images(im1, im2):
 def align_and_save_images(image_paths, output_folder):
     os.mkdir(output_folder)
     imReference = cv2.imread(image_paths[0], cv2.IMREAD_COLOR)
-    copyfile(image_paths[0], os.path.join(output_folder, f"aligned_img1.JPG"))
+    copyfile(image_paths[0], os.path.join(output_folder, "aligned_img1.JPG"))
 
     for i in range(1, len(image_paths)):
         im = cv2.imread(image_paths[i], cv2.IMREAD_COLOR)
@@ -52,6 +53,6 @@ def align_and_save_images(image_paths, output_folder):
         imReference = cv2.imread(outFilename, cv2.IMREAD_COLOR)
 
 if __name__ == '__main__':
-    path = input("What is the foldername? ")
-    image_paths = [os.path.join(path, f"img{i}.JPG") for i in range(1, 5)]
-    align_and_save_images(image_paths, os.path.join(path, "aligned"))
+    pictures_folder = os.path.expanduser("~/Desktop/riibiit/PICTURES")
+    image_paths = [os.path.join(pictures_folder, f"image{i}.jpg") for i in range(1, 5)]
+    align_and_save_images(image_paths, os.path.join(pictures_folder, "aligned"))
