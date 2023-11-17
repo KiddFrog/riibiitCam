@@ -14,6 +14,11 @@ def align_images(im1, im2):
     keypoints1, descriptors1 = orb.detectAndCompute(im1Gray, None)
     keypoints2, descriptors2 = orb.detectAndCompute(im2Gray, None)
 
+    # Check if keypoints and descriptors are found
+    if descriptors1 is None or descriptors2 is None:
+        print("Error: Keypoints or descriptors not found in one of the images.")
+        return None, None
+
     # Convert descriptors to np.float32
     descriptors1 = descriptors1.astype(np.float32)
     descriptors2 = descriptors2.astype(np.float32)
@@ -51,12 +56,16 @@ def align_and_save_images(image_paths, output_folder):
 
         imReg, _ = align_images(im, imReference)
 
-        outFilename = os.path.join(output_folder, f"aligned_img{i + 1}.JPG")
-        print("Saving aligned image : ", outFilename)
-        cv2.imwrite(outFilename, imReg)
+        # Check if alignment is successful
+        if imReg is not None:
+            outFilename = os.path.join(output_folder, f"aligned_img{i + 1}.JPG")
+            print("Saving aligned image : ", outFilename)
+            cv2.imwrite(outFilename, imReg)
 
-        # Update reference image for the next iteration
-        imReference = cv2.imread(outFilename, cv2.IMREAD_COLOR)
+            # Update reference image for the next iteration
+            imReference = cv2.imread(outFilename, cv2.IMREAD_COLOR)
+        else:
+            print(f"Error aligning images img{i} and img{i + 1}.")
 
 if __name__ == '__main__':
     pictures_folder = os.path.expanduser("~/Desktop/riibiit/PICTURES")
