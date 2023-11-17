@@ -35,7 +35,9 @@ def align_images(im1, im2):
     return im1Reg, h
 
 def align_and_save_images(image_paths, output_folder):
-    os.mkdir(output_folder)
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+
     imReference = cv2.imread(image_paths[0], cv2.IMREAD_COLOR)
     copyfile(image_paths[0], os.path.join(output_folder, "aligned_img1.JPG"))
 
