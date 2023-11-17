@@ -1,7 +1,7 @@
 import os
 import cv2
-import numpy as np
 from shutil import copyfile
+import numpy as np
 
 MAX_MATCHES = 1000
 GOOD_MATCH_PERCENT = 0.15
@@ -14,14 +14,9 @@ def align_images(im1, im2):
     keypoints1, descriptors1 = orb.detectAndCompute(im1Gray, None)
     keypoints2, descriptors2 = orb.detectAndCompute(im2Gray, None)
 
-    # Check if keypoints and descriptors are found
     if descriptors1 is None or descriptors2 is None:
-        print("Error: Keypoints or descriptors not found in one of the images.")
+        # Keypoints or descriptors not found in one of the images
         return None, None
-
-    # Convert descriptors to np.float32
-    descriptors1 = descriptors1.astype(np.float32)
-    descriptors2 = descriptors2.astype(np.float32)
 
     matcher = cv2.DescriptorMatcher_create(cv2.DESCRIPTOR_MATCHER_BRUTEFORCE_HAMMING)
     matches = matcher.match(descriptors1, descriptors2, None)
@@ -44,19 +39,17 @@ def align_images(im1, im2):
     return im1Reg, h
 
 def align_and_save_images(image_paths, output_folder):
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
+    os.makedirs(output_folder, exist_ok=True)
 
     imReference = cv2.imread(image_paths[0], cv2.IMREAD_COLOR)
     copyfile(image_paths[0], os.path.join(output_folder, "aligned_img1.JPG"))
 
-    for i in range(1, len(image_paths)):
+    for i in range(2, len(image_paths)):  # Start from img2
         im = cv2.imread(image_paths[i], cv2.IMREAD_COLOR)
         print(f"Aligning images img{i} and img{i + 1} ...")
 
         imReg, _ = align_images(im, imReference)
 
-        # Check if alignment is successful
         if imReg is not None:
             outFilename = os.path.join(output_folder, f"aligned_img{i + 1}.JPG")
             print("Saving aligned image : ", outFilename)
@@ -68,6 +61,6 @@ def align_and_save_images(image_paths, output_folder):
             print(f"Error aligning images img{i} and img{i + 1}.")
 
 if __name__ == '__main__':
-    pictures_folder = os.path.expanduser("~/Desktop/riibiit/PICTURES")
-    image_paths = [os.path.join(pictures_folder, f"image{i}.jpg") for i in range(1, 5)]
-    align_and_save_images(image_paths, os.path.join(pictures_folder, "aligned"))
+    path = "~/Desktop/riibiit/PICTURES"
+    image_paths = [os.path.join(path, f"img{i}.JPG") for i in range(1, 5)]
+    align_and_save_images(image_paths, os.path.join(path, "aligned"))
