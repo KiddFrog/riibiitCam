@@ -14,6 +14,10 @@ def align_images(im1, im2):
     keypoints1, descriptors1 = orb.detectAndCompute(im1Gray, None)
     keypoints2, descriptors2 = orb.detectAndCompute(im2Gray, None)
 
+    # Convert descriptors to np.float32
+    descriptors1 = descriptors1.astype(np.float32)
+    descriptors2 = descriptors2.astype(np.float32)
+
     matcher = cv2.DescriptorMatcher_create(cv2.DESCRIPTOR_MATCHER_BRUTEFORCE_HAMMING)
     matches = matcher.match(descriptors1, descriptors2, None)
 
