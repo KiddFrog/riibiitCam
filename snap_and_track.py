@@ -33,7 +33,7 @@ def crop_images(filename):
         cropped_image = image.crop((x, y, x + WIDTH, y + HEIGHT))
 
         # Save the cropped image
-        cropped_filename = f"crop_{filename}_{i}.jpg"
+        cropped_filename = f"image{i + 1}.jpg"
         cropped_image_path = os.path.join(OUTPUT_DIR, cropped_filename)
         cropped_image.save(cropped_image_path)
 
