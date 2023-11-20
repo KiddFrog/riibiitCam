@@ -22,14 +22,19 @@ def capture_photo():
         x = WIDTH * (i % 2)
         y = HEIGHT * (i // 2)
         cropped_image = image.crop((x, y, x + WIDTH, y + HEIGHT))
-        cropped_image.save(os.path.join(OUTPUT_DIR, f"{filename}_{i}.jpg"))
+
+        # Save each cropped image as image1.jpg, image2.jpg, etc.
+        cropped_filename = f"image{i + 1}.jpg"
+        cropped_image.save(os.path.join(OUTPUT_DIR, cropped_filename))
 
     # Create a GIF from the four images
-    image_paths = [os.path.join(OUTPUT_DIR, f"{filename}_{i}.jpg") for i in range(4)]
+    image_paths = [os.path.join(OUTPUT_DIR, f"image{i + 1}.jpg") for i in range(4)]
+    reversed_image_paths = image_paths[::-1]  # Reverse the order of images
+
     gif_path = os.path.join(OUTPUT_DIR, f"{filename}.gif")
 
     with Image.open(image_paths[0]) as gif_image:
-        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in image_paths[1:]], loop=0, duration=100)
+        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in image_paths[1:]] + [Image.open(path) for path in reversed_image_paths], loop=0, duration=100)
 
 # Capture a single photo and then exit
 capture_photo()
