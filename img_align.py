@@ -38,29 +38,33 @@ for m, n in matches4to2:
     if m.distance < 0.75 * n.distance:
         good_matches4to2.append(m)
 
-# Extract location of good matches
-src_pts1 = np.float32([kp1[m.queryIdx].pt for m in good_matches1to2]).reshape(-1, 1, 2)
-dst_pts1 = np.float32([kp2[m.trainIdx].pt for m in good_matches1to2]).reshape(-1, 1, 2)
+# Check if there are enough good matches
+if len(good_matches1to2) < 4 or len(good_matches3to2) < 4 or len(good_matches4to2) < 4:
+    print("Not enough good matches to calculate homography.")
+else:
+    # Extract location of good matches
+    src_pts1 = np.float32([kp1[m.queryIdx].pt for m in good_matches1to2]).reshape(-1, 1, 2)
+    dst_pts1 = np.float32([kp2[m.trainIdx].pt for m in good_matches1to2]).reshape(-1, 1, 2)
 
-src_pts3 = np.float32([kp3[m.queryIdx].pt for m in good_matches3to2]).reshape(-1, 1, 2)
-dst_pts3 = np.float32([kp2[m.trainIdx].pt for m in good_matches3to2]).reshape(-1, 1, 2)
+    src_pts3 = np.float32([kp3[m.queryIdx].pt for m in good_matches3to2]).reshape(-1, 1, 2)
+    dst_pts3 = np.float32([kp2[m.trainIdx].pt for m in good_matches3to2]).reshape(-1, 1, 2)
 
-src_pts4 = np.float32([kp4[m.queryIdx].pt for m in good_matches4to2]).reshape(-1, 1, 2)
-dst_pts4 = np.float32([kp2[m.trainIdx].pt for m in good_matches4to2]).reshape(-1, 1, 2)
+    src_pts4 = np.float32([kp4[m.queryIdx].pt for m in good_matches4to2]).reshape(-1, 1, 2)
+    dst_pts4 = np.float32([kp2[m.trainIdx].pt for m in good_matches4to2]).reshape(-1, 1, 2)
 
-# Compute homography matrices
-homography_matrix1, _ = cv2.findHomography(src_pts1, dst_pts1, cv2.RANSAC, 5.0)
-homography_matrix3, _ = cv2.findHomography(src_pts3, dst_pts3, cv2.RANSAC, 5.0)
-homography_matrix4, _ = cv2.findHomography(src_pts4, dst_pts4, cv2.RANSAC, 5.0)
+    # Compute homography matrices
+    homography_matrix1, _ = cv2.findHomography(src_pts1, dst_pts1, cv2.RANSAC, 5.0)
+    homography_matrix3, _ = cv2.findHomography(src_pts3, dst_pts3, cv2.RANSAC, 5.0)
+    homography_matrix4, _ = cv2.findHomography(src_pts4, dst_pts4, cv2.RANSAC, 5.0)
 
-# Apply homography to align images
-aligned_image1 = cv2.warpPerspective(image1, homography_matrix1, (image2.shape[1], image2.shape[0]))
-aligned_image3 = cv2.warpPerspective(image3, homography_matrix3, (image2.shape[1], image2.shape[0]))
-aligned_image4 = cv2.warpPerspective(image4, homography_matrix4, (image2.shape[1], image2.shape[0]))
+    # Apply homography to align images
+    aligned_image1 = cv2.warpPerspective(image1, homography_matrix1, (image2.shape[1], image2.shape[0]))
+    aligned_image3 = cv2.warpPerspective(image3, homography_matrix3, (image2.shape[1], image2.shape[0]))
+    aligned_image4 = cv2.warpPerspective(image4, homography_matrix4, (image2.shape[1], image2.shape[0]))
 
-# Display aligned images
-cv2.imshow('Aligned image1', aligned_image1)
-cv2.imshow('Aligned image3', aligned_image3)
-cv2.imshow('Aligned image4', aligned_image4)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    # Display aligned images
+    cv2.imshow('Aligned image1', aligned_image1)
+    cv2.imshow('Aligned image3', aligned_image3)
+    cv2.imshow('Aligned image4', aligned_image4)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
