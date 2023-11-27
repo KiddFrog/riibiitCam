@@ -1,5 +1,6 @@
 import os
 import time
+import subprocess
 from PIL import Image
 from gpiozero import Button
 from signal import pause
@@ -14,12 +15,16 @@ HEIGHT = 1748
 # Create a Button object for capturing photos
 button = Button(21)
 
+# Start the video streaming using libcamera-vid in the background
+video_process = subprocess.Popen(["libcamera-vid", "-t", "0"])
+
+# Function to capture a photo, create a GIF, and display the GIF
 def capture_photo():
     # Generate a unique filename based on the current date and time
     filename = time.strftime("%Y%m%d-%H%M%S")
 
-    # Use libcamera-jpeg to capture a photo and save it to the output directory
-    os.system(f"libcamera-jpeg -o {os.path.join(OUTPUT_DIR, filename + '.jpg')}")
+    # Use libcamera-vid to capture a photo and save it to the output directory
+    os.system(f"libcamera-vid -o {os.path.join(OUTPUT_DIR, filename + '.jpg')} -n 1")
 
     # Split the photo into four separate images (one from each camera)
     image = Image.open(os.path.join(OUTPUT_DIR, filename + ".jpg"))
@@ -40,6 +45,12 @@ def capture_photo():
 
     with Image.open(image_paths[0]) as gif_image:
         gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in image_paths[1:]] + [Image.open(path) for path in reversed_image_paths], loop=0, duration=100)
+
+    # Display the GIF using the default image viewer (change the command as needed)
+    os.system(f"xdg-open {gif_path}")
+
+    # Terminate the video streaming process
+    video_process.terminate()
 
 # Function to be called when the button is pressed
 def on_button_press():
