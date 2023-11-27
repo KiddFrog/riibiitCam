@@ -50,7 +50,7 @@ def capture_photo():
     os.system(f"xdg-open {gif_path}")
 
     # Terminate the video streaming process
-    video_process.terminate()
+    os.system("pkill -f libcamera-vid")
 
 # Function to be called when the button is pressed
 def on_button_press():
