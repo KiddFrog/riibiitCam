@@ -21,8 +21,8 @@ def toggle_preview():
     global preview_flag
     preview_flag = 1
 
-# Assign the function to the button press event
-button.when_pressed = toggle_preview
+# Assign the function to the button release event
+button.when_released = toggle_preview
 
 def capture_photo():
     global preview_flag
@@ -30,7 +30,7 @@ def capture_photo():
     # Start the video streaming using libcamera-vid with preview if preview_flag is 0
     if preview_flag == 0:
         video_process = subprocess.Popen(["libcamera-vid", "-t", "0"])
-        print("Preview started. Press the button to capture the photo and stop the preview.")
+        print("Preview started. Press and release the button to capture the photo and stop the preview.")
     else:
         # Stop the video streaming
         video_process.terminate()
@@ -67,3 +67,6 @@ def capture_photo():
 
 # Capture a single photo and then exit
 capture_photo()
+
+# Keep the script running and listening for events
+pause()
