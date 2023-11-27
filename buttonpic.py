@@ -38,28 +38,40 @@ def capture_photo():
     # Use libcamera-vid to capture a photo and save it to the output directory
     os.system(f"libcamera-vid -o {os.path.join(OUTPUT_DIR, filename + '.jpg')} -n 1")
 
-    # Split the photo into four separate images (one from each camera)
-    image = Image.open(os.path.join(OUTPUT_DIR, filename + ".jpg"))
-    for i in range(4):
-        x = WIDTH * (i % 2)
-        y = HEIGHT * (i // 2)
-        cropped_image = image.crop((x, y, x + WIDTH, y + HEIGHT))
+    # Introduce a longer delay before attempting to open the image file
+    time.sleep(3)
 
-        # Save each cropped image as image1.jpg, image2.jpg, etc.
-        cropped_filename = f"image{i + 1}.jpg"
-        cropped_image.save(os.path.join(OUTPUT_DIR, cropped_filename))
+    # Check if the image file exists
+    image_path = os.path.join(OUTPUT_DIR, filename + ".jpg")
+    if os.path.exists(image_path):
+        # Split the photo into four separate images (one from each camera)
+        image = Image.open(image_path)
+        for i in range(4):
+            x = WIDTH * (i % 2)
+            y = HEIGHT * (i // 2)
+            cropped_image = image.crop((x, y, x + WIDTH, y + HEIGHT))
 
-    # Create a GIF from the four images
-    image_paths = [os.path.join(OUTPUT_DIR, f"image{i + 1}.jpg") for i in range(4)]
-    reversed_image_paths = image_paths[::-1]  # Reverse the order of images
+            # Save each cropped image as image1.jpg, image2.jpg, etc.
+            cropped_filename = f"image{i + 1}.jpg"
+            cropped_image.save(os.path.join(OUTPUT_DIR, cropped_filename))
 
-    gif_path = os.path.join(OUTPUT_DIR, f"{filename}.gif")
+        # Create a GIF from the four images
+        image_paths = [os.path.join(OUTPUT_DIR, f"image{i + 1}.jpg") for i in range(4)]
+        reversed_image_paths = image_paths[::-1]  # Reverse the order of images
 
-    with Image.open(image_paths[0]) as gif_image:
-        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in image_paths[1:]] + [Image.open(path) for path in reversed_image_paths], loop=0, duration=100)
+        gif_path = os.path.join(OUTPUT_DIR, f"{filename}.gif")
 
-    # Display the GIF using the default image viewer (change the command as needed)
-    os.system(f"xdg-open {gif_path}")
+        with Image.open(image_paths[0]) as gif_image:
+            gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in image_paths[1:]] + [Image.open(path) for path in reversed_image_paths], loop=0, duration=100)
+
+        # Display the GIF using the default image viewer (change the command as needed)
+        os.system(f"xdg-open {gif_path}")
+    else:
+        print(f"Image file not found: {image_path}")
+
+    # Terminate the video streaming process
+    video_process.terminate()
+    video_process.wait()
 
 # Function to be called when the button is pressed
 def on_button_press():
