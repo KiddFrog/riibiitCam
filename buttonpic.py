@@ -49,8 +49,12 @@ def capture_photo():
     # Display the GIF using the default image viewer (change the command as needed)
     os.system(f"xdg-open {gif_path}")
 
+    # Introduce a small delay before terminating
+    time.sleep(1)
+
     # Terminate the video streaming process
-    os.system("pkill -f libcamera-vid")
+    video_process.terminate()
+    video_process.wait()
 
 # Function to be called when the button is pressed
 def on_button_press():
