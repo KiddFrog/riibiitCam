@@ -15,11 +15,23 @@ HEIGHT = 1748
 # Create a Button object for capturing photos
 button = Button(21)
 
-# Start the video streaming using libcamera-vid in the background
-video_process = subprocess.Popen(["libcamera-vid", "-t", "0"])
+# Initialize video_process variable
+video_process = None
+
+# Function to start the video streaming
+def start_video_stream():
+    global video_process
+    # Start the video streaming using libcamera-vid
+    video_process = subprocess.Popen(["libcamera-vid", "-t", "0"])
 
 # Function to capture a photo, create a GIF, and display the GIF
 def capture_photo():
+    global video_process
+    if video_process:
+        # If the video process is running, terminate it
+        video_process.terminate()
+        video_process.wait()
+
     # Generate a unique filename based on the current date and time
     filename = time.strftime("%Y%m%d-%H%M%S")
 
@@ -49,13 +61,6 @@ def capture_photo():
     # Display the GIF using the default image viewer (change the command as needed)
     os.system(f"xdg-open {gif_path}")
 
-    # Introduce a small delay before terminating
-    time.sleep(1)
-
-    # Terminate the video streaming process
-    video_process.terminate()
-    video_process.wait()
-
 # Function to be called when the button is pressed
 def on_button_press():
     print("Button pressed!")
@@ -63,6 +68,9 @@ def on_button_press():
 
 # Assign the function to the button press event
 button.when_pressed = on_button_press
+
+# Start the video streaming when the script begins
+start_video_stream()
 
 # Keep the script running and listening for events
 pause()
