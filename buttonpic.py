@@ -3,7 +3,6 @@ import time
 import subprocess
 from PIL import Image
 from gpiozero import Button
-from signal import pause
 
 # Set the output directory for the photos
 OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiit/PICTURES")
@@ -12,40 +11,40 @@ OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiit/PICTURES")
 WIDTH = 2328
 HEIGHT = 1748
 
+# Set the initial value of the preview flag
+preview_flag = 0
+
 # Create a Button object for capturing photos
 button = Button(21)
 
-# Initialize video_process variable
-video_process = None
+def toggle_preview():
+    global preview_flag
+    preview_flag = 1
 
-# Function to start the video streaming
-def start_video_stream():
-    global video_process
-    # Start the video streaming using libcamera-vid
-    video_process = subprocess.Popen(["libcamera-vid", "-t", "0"])
+# Assign the function to the button press event
+button.when_pressed = toggle_preview
 
-# Function to capture a photo, create a GIF, and display the GIF
 def capture_photo():
-    global video_process
-    if video_process:
-        # If the video process is running, terminate it
+    global preview_flag
+
+    # Start the video streaming using libcamera-vid with preview if preview_flag is 0
+    if preview_flag == 0:
+        video_process = subprocess.Popen(["libcamera-vid", "-t", "0"])
+        print("Preview started. Press the button to capture the photo and stop the preview.")
+    else:
+        # Stop the video streaming
         video_process.terminate()
         video_process.wait()
+        print("Preview stopped. Capturing photo...")
 
-    # Generate a unique filename based on the current date and time
-    filename = time.strftime("%Y%m%d-%H%M%S")
+        # Generate a unique filename based on the current date and time
+        filename = time.strftime("%Y%m%d-%H%M%S")
 
-    # Use libcamera-vid to capture a photo and save it to the output directory
-    os.system(f"libcamera-vid -o {os.path.join(OUTPUT_DIR, filename + '.jpg')} -n 1")
+        # Use libcamera-jpeg to capture a photo and save it to the output directory
+        os.system(f"libcamera-jpeg -o {os.path.join(OUTPUT_DIR, filename + '.jpg')}")
 
-    # Introduce a longer delay before attempting to open the image file
-    time.sleep(3)
-
-    # Check if the image file exists
-    image_path = os.path.join(OUTPUT_DIR, filename + ".jpg")
-    if os.path.exists(image_path):
         # Split the photo into four separate images (one from each camera)
-        image = Image.open(image_path)
+        image = Image.open(os.path.join(OUTPUT_DIR, filename + ".jpg"))
         for i in range(4):
             x = WIDTH * (i % 2)
             y = HEIGHT * (i // 2)
@@ -64,25 +63,7 @@ def capture_photo():
         with Image.open(image_paths[0]) as gif_image:
             gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in image_paths[1:]] + [Image.open(path) for path in reversed_image_paths], loop=0, duration=100)
 
-        # Display the GIF using the default image viewer (change the command as needed)
-        os.system(f"xdg-open {gif_path}")
-    else:
-        print(f"Image file not found: {image_path}")
+        print(f"Photo captured and saved as {filename}.gif")
 
-    # Terminate the video streaming process
-    video_process.terminate()
-    video_process.wait()
-
-# Function to be called when the button is pressed
-def on_button_press():
-    print("Button pressed!")
-    capture_photo()
-
-# Assign the function to the button press event
-button.when_pressed = on_button_press
-
-# Start the video streaming when the script begins
-start_video_stream()
-
-# Keep the script running and listening for events
-pause()
+# Capture a single photo and then exit
+capture_photo()
