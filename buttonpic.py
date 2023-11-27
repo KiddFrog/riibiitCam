@@ -59,6 +59,10 @@ def capture_photo():
             gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in image_paths[1:]] + [Image.open(path) for path in reversed_image_paths], loop=0, duration=100)
 
         print(f"Photo captured and saved as {filename}.gif")
+
+        # Open the GIF with the default system viewer
+        subprocess.run(["xdg-open", gif_path])  # Adjust this line based on your system (xdg-open is for Linux)
+
     else:
         print("Cannot capture photo without preview. Press and release the button to start the preview.")
 
