@@ -27,8 +27,8 @@ def capture_photo():
         cropped_filename = f"image{i + 1}.jpg"
         cropped_image.save(os.path.join(OUTPUT_DIR, cropped_filename))
 
-    # Create a GIF from the four images
-    image_paths = [os.path.join(OUTPUT_DIR, f"image{i + 1}.jpg") for i in range(4)]
+    # Create a GIF from the six images in the specified order
+    image_paths = [os.path.join(OUTPUT_DIR, f"image{i + 1}.jpg") for i in [1, 2, 3, 2, 1, 0]]
     reversed_image_paths = image_paths[::-1]  # Reverse the order of images
 
     gif_path = os.path.join(OUTPUT_DIR, f"{filename}.gif")

@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Set the output directory for aligned images and the GIF
-OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiit/PICTURES")
+OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiitCam/PICTURES")
 
 # Load the images
 image1 = cv2.imread(os.path.join(OUTPUT_DIR, 'image1.jpg'), cv2.IMREAD_GRAYSCALE)
