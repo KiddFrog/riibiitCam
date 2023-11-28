@@ -54,6 +54,8 @@ for m, n in matches4to2:
 if len(good_matches1to2) < 4 or len(good_matches3to2) < 4 or len(good_matches4to2) < 4:
     print("Not enough good matches to calculate homography.")
 else:
+    print("Generating alignment...")
+
     # Extract location of good matches
     src_pts1 = np.float32([kp1[m.queryIdx].pt for m in good_matches1to2]).reshape(-1, 1, 2)
     dst_pts1 = np.float32([kp2[m.trainIdx].pt for m in good_matches1to2]).reshape(-1, 1, 2)
@@ -69,15 +71,33 @@ else:
     homography_matrix3, _ = cv2.findHomography(src_pts3, dst_pts3, cv2.RANSAC, 5.0)
     homography_matrix4, _ = cv2.findHomography(src_pts4, dst_pts4, cv2.RANSAC, 5.0)
 
+    # Adjust homography matrices to preserve aspect ratio
+    aspect_ratio = float(image2.shape[1]) / float(image2.shape[0])
+    homography_matrix1[0, 1] = homography_matrix1[0, 1] * aspect_ratio
+    homography_matrix1[1, 0] = homography_matrix1[1, 0] / aspect_ratio
+
+    homography_matrix3[0, 1] = homography_matrix3[0, 1] * aspect_ratio
+    homography_matrix3[1, 0] = homography_matrix3[1, 0] / aspect_ratio
+
+    homography_matrix4[0, 1] = homography_matrix4[0, 1] * aspect_ratio
+    homography_matrix4[1, 0] = homography_matrix4[1, 0] / aspect_ratio
+
     # Apply homography to align images without stretching
     aligned_image1 = cv2.warpPerspective(image1_rgb, homography_matrix1, (image2.shape[1], image2.shape[0]))
+    print("Image1 aligned.")
+
     aligned_image3 = cv2.warpPerspective(image3_rgb, homography_matrix3, (image2.shape[1], image2.shape[0]))
+    print("Image3 aligned.")
+
     aligned_image4 = cv2.warpPerspective(image4_rgb, homography_matrix4, (image2.shape[1], image2.shape[0]))
+    print("Image4 aligned.")
 
     # Save aligned images
     cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align1.jpg'), cv2.cvtColor(aligned_image1, cv2.COLOR_RGB2BGR))
     cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align3.jpg'), cv2.cvtColor(aligned_image3, cv2.COLOR_RGB2BGR))
     cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align4.jpg'), cv2.cvtColor(aligned_image4, cv2.COLOR_RGB2BGR))
+
+    print("All images aligned.")
 
     # Create a looping GIF
     aligned_image_paths = [os.path.join(OUTPUT_DIR, f'Align{i}.jpg') for i in [1, 2, 3, 4, 3, 2]]
@@ -85,3 +105,8 @@ else:
 
     with Image.open(aligned_image_paths[0]) as gif_image:
         gif_image.save(gif_path, save_all=True, append_images=[Image.open(path).convert('RGB') for path in aligned_image_paths[1:]], loop=0, duration=100)
+
+    print(f"Generated GIF: {gif_path}")
+
+    # Open the generated GIF
+    os.system(f"start {gif_path
