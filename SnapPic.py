@@ -3,7 +3,7 @@ import time
 from PIL import Image
 
 # Set the output directory for the photos
-OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiit/PICTURES")
+OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiitCam/PICTURES")
 
 # Set the dimensions for each camera image
 WIDTH = 2328
