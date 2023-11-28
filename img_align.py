@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
+from PIL import Image
 import os
+import time
 
 # Set the output directory for aligned images and the GIF
 OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiitCam/PICTURES")
@@ -73,15 +75,10 @@ else:
 
     # Create a looping GIF
     aligned_image_paths = [os.path.join(OUTPUT_DIR, f'Align{i}.jpg') for i in [1, 3, 4, 3]]
-    gif_path = os.path.join(OUTPUT_DIR, 'aligned_images.gif')
+    gif_path = os.path.join(OUTPUT_DIR, f'aligned_{time.strftime("%Y%m%d-%H%M%S")}.gif')
 
-    images = [cv2.imread(path) for path in aligned_image_paths]
-    gif_images = images + images[::-1]  # Reverse the order for the looping effect
-
-    cv2.imwrite(gif_path, gif_images[0], [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-    with cv2.VideoWriter(gif_path, cv2.VideoWriter_fourcc(*"MJPG"), 1, (images[0].shape[1], images[0].shape[0])) as video:
-        for img in gif_images:
-            video.write(img)
+    with Image.open(aligned_image_paths[0]) as gif_image:
+        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in aligned_image_paths[1:]] + [Image.open(path) for path in reversed(aligned_image_paths)], loop=0, duration=100)
 
     # Display aligned images
     cv2.imshow('Aligned image1', aligned_image1)
