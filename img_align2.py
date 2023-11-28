@@ -13,6 +13,9 @@ image2 = cv2.imread(os.path.join(OUTPUT_DIR, 'image2.jpg'))  # The baseline imag
 image3 = cv2.imread(os.path.join(OUTPUT_DIR, 'image3.jpg'))
 image4 = cv2.imread(os.path.join(OUTPUT_DIR, 'image4.jpg'))
 
+# Duplicate image2 and save as Align2
+cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align2.jpg'), image2)
+
 # Convert BGR images to RGB
 image1_rgb = cv2.cvtColor(image1, cv2.COLOR_BGR2RGB)
 image2_rgb = cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)
@@ -109,4 +112,4 @@ else:
     print(f"Generated GIF: {gif_path}")
 
     # Open the generated GIF
-    os.system(f"start {gif_path
+    os.system(f"open {gif_path}")
