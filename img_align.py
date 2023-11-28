@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import os
 import time
+import shutil
 
 # Set the output directory for aligned images and the GIF
 OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiitCam/PICTURES")
@@ -12,6 +13,10 @@ image1 = cv2.imread(os.path.join(OUTPUT_DIR, 'image1.jpg'))
 image2 = cv2.imread(os.path.join(OUTPUT_DIR, 'image2.jpg'))  # The baseline image
 image3 = cv2.imread(os.path.join(OUTPUT_DIR, 'image3.jpg'))
 image4 = cv2.imread(os.path.join(OUTPUT_DIR, 'image4.jpg'))
+
+# Duplicate image2 and save it as Align2.jpg
+align2_path = os.path.join(OUTPUT_DIR, 'Align2.jpg')
+shutil.copy2(os.path.join(OUTPUT_DIR, 'image2.jpg'), align2_path)
 
 # Convert BGR images to RGB
 image1_rgb = cv2.cvtColor(image1, cv2.COLOR_BGR2RGB)
@@ -71,17 +76,19 @@ else:
 
     # Apply homography to align images
     aligned_image1 = cv2.warpPerspective(image1_rgb, homography_matrix1, (image2.shape[1], image2.shape[0]))
+    aligned_image2 = cv2.warpPerspective(image2_rgb, np.identity(3), (image2.shape[1], image2.shape[0]))
     aligned_image3 = cv2.warpPerspective(image3_rgb, homography_matrix3, (image2.shape[1], image2.shape[0]))
     aligned_image4 = cv2.warpPerspective(image4_rgb, homography_matrix4, (image2.shape[1], image2.shape[0]))
 
     # Save aligned images
     cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align1.jpg'), cv2.cvtColor(aligned_image1, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align2.jpg'), cv2.cvtColor(aligned_image2, cv2.COLOR_RGB2BGR))
     cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align3.jpg'), cv2.cvtColor(aligned_image3, cv2.COLOR_RGB2BGR))
     cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align4.jpg'), cv2.cvtColor(aligned_image4, cv2.COLOR_RGB2BGR))
 
     # Create a looping GIF
-    aligned_image_paths = [os.path.join(OUTPUT_DIR, f'Align{i}.jpg') for i in [1, 3, 4, 3]]
+    aligned_image_paths = [os.path.join(OUTPUT_DIR, f'Align{i}.jpg') for i in [1, 2, 3, 4, 3, 2]]
     gif_path = os.path.join(OUTPUT_DIR, f'aligned_{time.strftime("%Y%m%d-%H%M%S")}.gif')
 
     with Image.open(aligned_image_paths[0]) as gif_image:
-        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path).convert('RGB') for path in aligned_image_paths[1:3]] + [Image.open(path).convert('RGB') for path in reversed(aligned_image_paths[2:])], loop=0, duration=100)
+        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path).convert('RGB') for path in aligned_image_paths[1:]], loop=0, duration=100)
