@@ -69,11 +69,15 @@ def align_images(gif_path):
     # Initialize ORB detector with adjusted parameters
     orb = cv2.ORB_create(nfeatures=1000, scaleFactor=1.2, nlevels=8)
 
+    # Initialize aligned_filename2 outside the if statement
+    aligned_filename2 = ""
+
     # Align the baseline image (image2)
-    aligned_image2 = images_rgb[1].copy()
-    aligned_filename2 = f"{filename}_Align2.jpg"
-    cv2.imwrite(os.path.join(OUTPUT_DIR, aligned_filename2), cv2.cvtColor(aligned_image2, cv2.COLOR_RGB2BGR))
-    print("Image2 aligned.")
+    if len(images) > 1:
+        aligned_image2 = images_rgb[1].copy()
+        aligned_filename2 = f"{filename}_Align2.jpg"
+        cv2.imwrite(os.path.join(OUTPUT_DIR, aligned_filename2), cv2.cvtColor(aligned_image2, cv2.COLOR_RGB2BGR))
+        print("Image2 aligned.")
 
     # Iterate over consecutive image pairs (skip image2 in the loop)
     for i in range(2, len(images)):
