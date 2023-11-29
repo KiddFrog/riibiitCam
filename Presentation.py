@@ -15,18 +15,20 @@ OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiitCam/PICTURES")
 WIDTH = 2328
 HEIGHT = 1748
 
-# Initialize the photo counter
+# Initialize the photo counter and filename
 photo_counter = 0
+filename = ""
 
 # Function to capture a photo and split it into four separate images
 def capture_photo():
-    global photo_counter
+    global photo_counter, filename
     photo_counter += 1
 
     filename = f"{time.strftime('%Y%m%d-%H%M%S')}_photo{photo_counter}"
     photo_path = os.path.join(OUTPUT_DIR, f"{filename}.jpg")
 
     # Capture a photo
+    print("Say Cheese!")
     os.system(f"libcamera-jpeg -o {photo_path}")
 
     # Split the photo into four separate images
@@ -44,21 +46,24 @@ def capture_photo():
     image_paths = [os.path.join(OUTPUT_DIR, f"{filename}_image{i + 1}.jpg") for i in range(4)]
     reversed_image_paths = image_paths[::-1]
 
-    gif_path = os.path.join(OUTPUT_DIR, f"{filename}.gif")
+    original_gif_path = os.path.join(OUTPUT_DIR, f"{filename}_original.gif")
 
     with Image.open(image_paths[0]) as gif_image:
         gif_image.save(
-            gif_path,
+            original_gif_path,
             save_all=True,
             append_images=[Image.open(path) for path in image_paths[1:]] + [Image.open(path) for path in reversed_image_paths],
             loop=0,
             duration=100
         )
 
-    return gif_path
+    print(f"Photo captured and original GIF created: {original_gif_path}")
+
+    return original_gif_path
 
 # Function to align images and create a looping GIF
 def align_images(gif_path):
+    global filename
     # Load the images
     image_paths = [os.path.join(OUTPUT_DIR, f'{filename}_image{i + 1}.jpg') for i in range(4)]
     images = [cv2.imread(path) for path in image_paths]
@@ -89,8 +94,7 @@ def align_images(gif_path):
         if len(good_matches) < 4:
             print(f"Not enough good matches between image{i-1} and image{i} to calculate homography.")
         else:
-            print(f"Generating alignment between image{i-1} and image{i}...")
-
+            print(f"Aligning images {i-1} and {i}...")
             # Extract location of good matches
             src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
@@ -105,7 +109,7 @@ def align_images(gif_path):
 
             # Apply homography to align images without stretching
             aligned_image = cv2.warpPerspective(images_rgb[i-1], homography_matrix, (images[i].shape[1], images[i].shape[0]))
-            print(f"Image{i-1} aligned with Image{i}.")
+            print(f"Images {i-1} and {i} aligned.")
 
             # Save aligned image
             aligned_filename = f"{filename}_Align{i-1}.jpg"
@@ -115,29 +119,34 @@ def align_images(gif_path):
 
     # Create a looping GIF
     aligned_image_paths = [os.path.join(OUTPUT_DIR, f"{filename}_Align{i-1}.jpg") for i in range(1, len(images))]
-    gif_path = os.path.join(OUTPUT_DIR, f"{filename}_aligned_{time.strftime('%Y%m%d-%H%M%S')}.gif")
+    aligned_gif_path = os.path.join(OUTPUT_DIR, f"{filename}_aligned_{time.strftime('%Y%m%d-%H%M%S')}.gif")
 
     with Image.open(aligned_image_paths[0]) as gif_image:
         gif_image.save(
-            gif_path,
+            aligned_gif_path,
             save_all=True,
             append_images=[Image.open(path).convert('RGB') for path in aligned_image_paths],
             loop=0,
             duration=100
         )
 
-    print(f"Generated GIF: {gif_path}")
+    print(f"Aligned GIF created: {aligned_gif_path}")
+    
+    # Open the generated GIFs
+    os.system(f"open {gif_path}")
+    os.system(f"open {aligned_gif_path}")
 
 # Create a button object associated with GPIO pin 21
 button = Button(21)
 
 # Function to be executed when the button is pressed
 def button_pressed():
+    print("Button pressed!")
     # Capture a photo, split it into four images, and create a GIF
-    gif_path = capture_photo()
+    original_gif_path = capture_photo()
 
     # Align the images and create a looping GIF
-    align_images(gif_path)
+    align_images(original_gif_path)
 
 # Assign the button_pressed function to the when_pressed attribute of the button
 button.when_pressed = button_pressed
