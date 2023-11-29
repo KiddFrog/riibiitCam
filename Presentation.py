@@ -1,158 +1,164 @@
-import cv2
-import numpy as np
-from PIL import Image
 import os
 import time
-import shutil
+from PIL import Image
+import cv2
+import numpy as np
 from gpiozero import Button
 from signal import pause
 
-# Set the output directory for photos and aligned images
+# Set the output directory for the photos
 OUTPUT_DIR = os.path.expanduser("~/Desktop/riibiitCam/PICTURES")
 
 # Set the dimensions for each camera image
 WIDTH = 2328
 HEIGHT = 1748
 
-# Global variable for the filename
-filename = ""
-
-# Function to capture a photo and split it into four separate images
 def capture_photo():
-    global filename
+    # Generate a unique filename based on the current date and time
     filename = time.strftime("%Y%m%d-%H%M%S")
-    photo_path = os.path.join(OUTPUT_DIR, f"{filename}.jpg")
 
-    # Capture a photo
-    os.system(f"libcamera-jpeg -o {photo_path}")
+    # Use libcamera-jpeg to capture a photo and save it to the output directory
+    os.system(f"libcamera-jpeg -o {os.path.join(OUTPUT_DIR, filename + '.jpg')}")
 
-    # Split the photo into four separate images
-    image = Image.open(photo_path)
+    # Split the photo into four separate images (one from each camera)
+    image = Image.open(os.path.join(OUTPUT_DIR, filename + ".jpg"))
     for i in range(4):
         x = WIDTH * (i % 2)
         y = HEIGHT * (i // 2)
         cropped_image = image.crop((x, y, x + WIDTH, y + HEIGHT))
 
         # Save each cropped image as image1.jpg, image2.jpg, etc.
-        cropped_filename = f"{filename}_image{i + 1}.jpg"
+        cropped_filename = f"image{i + 1}.jpg"
         cropped_image.save(os.path.join(OUTPUT_DIR, cropped_filename))
 
     # Create a GIF from the four images
-    image_paths = [os.path.join(OUTPUT_DIR, f"{filename}_image{i + 1}.jpg") for i in range(4)]
-    reversed_image_paths = image_paths[::-1]
+    image_paths = [os.path.join(OUTPUT_DIR, f"image{i + 1}.jpg") for i in range(4)]
+    reversed_image_paths = image_paths[::-1]  # Reverse the order of images
 
-    gif_path = os.path.join(OUTPUT_DIR, f"{filename}_photo_original.gif")
+    gif_path = os.path.join(OUTPUT_DIR, f"{filename}.gif")
 
     with Image.open(image_paths[0]) as gif_image:
-        gif_image.save(
-            gif_path,
-            save_all=True,
-            append_images=[Image.open(path) for path in image_paths[1:]] + [Image.open(path) for path in reversed_image_paths],
-            loop=0,
-            duration=100
-        )
+        gif_image.save(gif_path, save_all=True, append_images=[Image.open(path) for path in image_paths[1:]] + [Image.open(path) for path in reversed_image_paths], loop=0, duration=100)
 
-    print(f"Photo captured and original GIF created: {gif_path}")
+    # Open the first GIF
+    os.system(f"open {gif_path}")
 
-    return gif_path
+    # Call the second code snippet
+    align_images()
 
-# Function to align images and create a looping GIF
-def align_images(gif_path):
-    global filename
+def align_images():
     # Load the images
-    image_paths = [os.path.join(OUTPUT_DIR, f'{filename}_image{i + 1}.jpg') for i in range(4)]
-    images = [cv2.imread(path) for path in image_paths]
+    image1 = cv2.imread(os.path.join(OUTPUT_DIR, 'image1.jpg'))
+    image2 = cv2.imread(os.path.join(OUTPUT_DIR, 'image2.jpg'))  # The baseline image
+    image3 = cv2.imread(os.path.join(OUTPUT_DIR, 'image3.jpg'))
+    image4 = cv2.imread(os.path.join(OUTPUT_DIR, 'image4.jpg'))
+
+    # Duplicate image2 and save as Align2
+    cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align2.jpg'), image2)
 
     # Convert BGR images to RGB
-    images_rgb = [cv2.cvtColor(image, cv2.COLOR_BGR2RGB) for image in images]
+    image1_rgb = cv2.cvtColor(image1, cv2.COLOR_BGR2RGB)
+    image2_rgb = cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)
+    image3_rgb = cv2.cvtColor(image3, cv2.COLOR_BGR2RGB)
+    image4_rgb = cv2.cvtColor(image4, cv2.COLOR_BGR2RGB)
 
     # Initialize ORB detector with adjusted parameters
     orb = cv2.ORB_create(nfeatures=1000, scaleFactor=1.2, nlevels=8)
 
-    # Initialize aligned_filename2 outside the if statement
-    aligned_filename2 = ""
+    # Find the keypoints and descriptors with ORB
+    kp1, des1 = orb.detectAndCompute(image1, None)
+    kp2, des2 = orb.detectAndCompute(image2, None)  # The baseline image
+    kp3, des3 = orb.detectAndCompute(image3, None)
+    kp4, des4 = orb.detectAndCompute(image4, None)
 
-    # Align the baseline image (image2)
-    if len(images) > 1:
-        aligned_image2 = images_rgb[1].copy()
-        aligned_filename2 = f"{filename}_Align2.jpg"
-        cv2.imwrite(os.path.join(OUTPUT_DIR, aligned_filename2), cv2.cvtColor(aligned_image2, cv2.COLOR_RGB2BGR))
-        print("Image2 aligned.")
+    # Use the BFMatcher to find the best matches between descriptors
+    bf = cv2.BFMatcher()
+    matches1to2 = bf.knnMatch(des1, des2, k=2)
+    matches3to2 = bf.knnMatch(des3, des2, k=2)
+    matches4to2 = bf.knnMatch(des4, des2, k=2)
 
-    # Iterate over consecutive image pairs (skip image2 in the loop)
-    for i in range(2, len(images)):
-        # Find the keypoints and descriptors with ORB
-        kp1, des1 = orb.detectAndCompute(images[i - 1], None)
-        kp2, des2 = orb.detectAndCompute(images[i], None)
+    # Apply ratio test with adjusted threshold
+    good_matches1to2 = []
+    for m, n in matches1to2:
+        if m.distance < 0.6 * n.distance:
+            good_matches1to2.append(m)
 
-        # Use the BFMatcher to find the best matches between descriptors
-        bf = cv2.BFMatcher()
-        matches = bf.knnMatch(des1, des2, k=2)
+    good_matches3to2 = []
+    for m, n in matches3to2:
+        if m.distance < 0.6 * n.distance:
+            good_matches3to2.append(m)
 
-        # Apply ratio test with adjusted threshold
-        good_matches = []
-        for m, n in matches:
-            if m.distance < 0.6 * n.distance:
-                good_matches.append(m)
+    good_matches4to2 = []
+    for m, n in matches4to2:
+        if m.distance < 0.6 * n.distance:
+            good_matches4to2.append(m)
 
-        # Check if there are enough good matches
-        if len(good_matches) < 4:
-            print(f"Not enough good matches between image{i-1} and image{i} to calculate homography.")
-        else:
-            # Extract location of good matches
-            src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-            dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+    # Check if there are enough good matches
+    if len(good_matches1to2) < 4 or len(good_matches3to2) < 4 or len(good_matches4to2) < 4:
+        print("Not enough good matches to calculate homography.")
+    else:
+        print("Generating alignment...")
 
-            # Compute homography matrix
-            homography_matrix, status = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+        # Extract location of good matches
+        src_pts1 = np.float32([kp1[m.queryIdx].pt for m in good_matches1to2]).reshape(-1, 1, 2)
+        dst_pts1 = np.float32([kp2[m.trainIdx].pt for m in good_matches1to2]).reshape(-1, 1, 2)
 
-            # Check if the homography matrix is successfully computed
-            if homography_matrix is not None:
-                # Adjust homography matrix to preserve aspect ratio
-                aspect_ratio = float(images[i].shape[1]) / float(images[i].shape[0])
-                homography_matrix[0, 1] = homography_matrix[0, 1] * aspect_ratio
-                homography_matrix[1, 0] = homography_matrix[1, 0] / aspect_ratio
+        src_pts3 = np.float32([kp3[m.queryIdx].pt for m in good_matches3to2]).reshape(-1, 1, 2)
+        dst_pts3 = np.float32([kp2[m.trainIdx].pt for m in good_matches3to2]).reshape(-1, 1, 2)
 
-                # Apply homography to align images without stretching
-                aligned_image = cv2.warpPerspective(images_rgb[i-1], homography_matrix, (images[i].shape[1], images[i].shape[0]))
-                print(f"Images {i-1} and {i} aligned.")
+        src_pts4 = np.float32([kp4[m.queryIdx].pt for m in good_matches4to2]).reshape(-1, 1, 2)
+        dst_pts4 = np.float32([kp2[m.trainIdx].pt for m in good_matches4to2]).reshape(-1, 1, 2)
 
-                # Save aligned image
-                aligned_filename = f"{filename}_Align{i}.jpg"
-                cv2.imwrite(os.path.join(OUTPUT_DIR, aligned_filename), cv2.cvtColor(aligned_image, cv2.COLOR_RGB2BGR))
-            else:
-                print(f"Failed to compute homography matrix for images {i-1} and {i}.")
+        # Compute homography matrices
+        homography_matrix1, _ = cv2.findHomography(src_pts1, dst_pts1, cv2.RANSAC, 5.0)
+        homography_matrix3, _ = cv2.findHomography(src_pts3, dst_pts3, cv2.RANSAC, 5.0)
+        homography_matrix4, _ = cv2.findHomography(src_pts4, dst_pts4, cv2.RANSAC, 5.0)
 
-    print("All images aligned.")
+        # Adjust homography matrices to preserve aspect ratio
+        aspect_ratio = float(image2.shape[1]) / float(image2.shape[0])
+        homography_matrix1[0, 1] = homography_matrix1[0, 1] * aspect_ratio
+        homography_matrix1[1, 0] = homography_matrix1[1, 0] / aspect_ratio
 
-    # Create a looping GIF
-    aligned_image_paths = [os.path.join(OUTPUT_DIR, f"{filename}_Align{i}.jpg") for i in range(2, len(images))]
-    aligned_gif_path = os.path.join(OUTPUT_DIR, f"{filename}_aligned_{time.strftime('%Y%m%d-%H%M%S')}.gif")
+        homography_matrix3[0, 1] = homography_matrix3[0, 1] * aspect_ratio
+        homography_matrix3[1, 0] = homography_matrix3[1, 0] / aspect_ratio
 
-    with Image.open(aligned_filename2) as gif_image:
-        gif_image.save(
-            aligned_gif_path,
-            save_all=True,
-            append_images=[Image.open(path).convert('RGB') for path in aligned_image_paths],
-            loop=0,
-            duration=100
-        )
+        homography_matrix4[0, 1] = homography_matrix4[0, 1] * aspect_ratio
+        homography_matrix4[1, 0] = homography_matrix4[1, 0] / aspect_ratio
 
-    print(f"Aligned GIF created: {aligned_gif_path}")
+        # Apply homography to align images without stretching
+        aligned_image1 = cv2.warpPerspective(image1_rgb, homography_matrix1, (image2.shape[1], image2.shape[0]))
+        print("Image1 aligned.")
 
-    # Open the generated GIFs
-    os.system(f"open {gif_path}")
-    os.system(f"open {aligned_gif_path}")
+        aligned_image3 = cv2.warpPerspective(image3_rgb, homography_matrix3, (image2.shape[1], image2.shape[0]))
+        print("Image3 aligned.")
 
-# Function to handle button press
-def button_pressed():
-    print("Say Cheese!")
-    gif_path = capture_photo()
-    align_images(gif_path)
+        aligned_image4 = cv2.warpPerspective(image4_rgb, homography_matrix4, (image2.shape[1], image2.shape[0]))
+        print("Image4 aligned.")
 
-# Set up the button
+        # Save aligned images
+        cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align1.jpg'), cv2.cvtColor(aligned_image1, cv2.COLOR_RGB2BGR))
+        cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align3.jpg'), cv2.cvtColor(aligned_image3, cv2.COLOR_RGB2BGR))
+        cv2.imwrite(os.path.join(OUTPUT_DIR, 'Align4.jpg'), cv2.cvtColor(aligned_image4, cv2.COLOR_RGB2BGR))
+
+        print("All images aligned.")
+
+        # Create a looping GIF
+        aligned_image_paths = [os.path.join(OUTPUT_DIR, f'Align{i}.jpg') for i in [1, 2, 3, 4, 3, 2]]
+        gif_path = os.path.join(OUTPUT_DIR, f'aligned_{time.strftime("%Y%m%d-%H%M%S")}.gif')
+
+        with Image.open(aligned_image_paths[0]) as gif_image:
+            gif_image.save(gif_path, save_all=True, append_images=[Image.open(path).convert('RGB') for path in aligned_image_paths[1:]], loop=0, duration=100)
+
+        # Open the second GIF
+        os.system(f"open {gif_path}")
+
+# Button setup
 button = Button(21)
-button.when_pressed = button_pressed
 
-# Wait for button presses
+def press():
+    print("Button pressed!")
+    capture_photo()  # Call the function when the button is pressed
+
+button.when_pressed = press
+
 pause()
